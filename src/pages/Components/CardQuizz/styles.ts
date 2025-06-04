@@ -83,10 +83,3 @@ export const Description = styled.h1`
   text-align: justify;
 `;
 
-export const TitleRegisterOrSignIn = styled.a`
-  margin-bottom: 30px;
-  font-family: "Plus Jakarta Sans", sans-serif;
-  font-size: 18px;
-  color: #fff;
-  cursor: pointer;
-`;
