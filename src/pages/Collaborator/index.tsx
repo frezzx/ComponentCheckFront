@@ -5,6 +5,7 @@ import httpClient from "../../services/api";
 import { useAuth } from "../../auth/AuthContext";
 import { Header } from "../Components/Header";
 import { toast } from "react-toastify";
+import Resultado from "../Components/pdfGenerator";
 
 interface Answer {
   id: number;
@@ -38,6 +39,8 @@ export default function Collaborator() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([]);
   const [userAnswers, setUserAnswers] = useState<number[]>([]);
+  const [showResultado, setShowResultado] = useState(false);
+  const [score, setScore] = useState(0);
 
   useEffect(() => {
     if (user?.role !== "collaborator") {
@@ -74,6 +77,7 @@ export default function Collaborator() {
     setFilteredQuestions(questionsForLevel);
     setStartQuizz(true);
     setCurrentIndex(0);
+    setShowResultado(false); // reset resultado ao iniciar quiz
   };
 
   const handleNext = () => {
@@ -102,25 +106,53 @@ export default function Collaborator() {
       return;
     }
 
-    const score = filteredQuestions.reduce((acc, question, index) => {
+    const calculatedScore = filteredQuestions.reduce((acc, question, index) => {
       const correctAnswerIndex = question.answers.findIndex((a) => a.isCorrect);
       return acc + (userAnswers[index] === correctAnswerIndex ? 1 : 0);
     }, 0);
 
+    setScore(calculatedScore);
+    setShowResultado(true); // mostra o PDF
+    setStartQuizz(false);
+
     toast.success(
-      `Quiz finalizado! Você acertou ${score} de ${filteredQuestions.length} perguntas`,
+      `Quiz finalizado! Você acertou ${calculatedScore} de ${filteredQuestions.length} perguntas`,
       {
         autoClose: false,
         closeButton: true,
       }
     );
-
-    setStartQuizz(false);
-    setCurrentIndex(0);
-    setFilteredQuestions([]);
-    setSelectedDifficulty("");
-    setUserAnswers([]);
   };
+
+  if (showResultado) {
+    // Status simples para exemplo: "Aprovado" se acertar >= 70%
+    const status =
+      score / filteredQuestions.length >= 0.7 ? "Aprovado" : "Reprovado";
+
+    return (
+      <Container>
+        <Header />
+        <Section style={{ backgroundColor: "#fff" }}>
+          <Resultado
+            nome={user?.name || "Usuário"}
+            pontuacao={score}
+            status={status}
+          />
+          <CustomButton
+            onClick={() => {
+              setShowResultado(false);
+              setSelectedDifficulty("");
+              setUserAnswers([]);
+              setFilteredQuestions([]);
+              setCurrentIndex(0);
+            }}
+          >
+            Voltar para seleção
+          </CustomButton>
+        </Section>
+      </Container>
+    );
+  }
 
   return (
     <Container>

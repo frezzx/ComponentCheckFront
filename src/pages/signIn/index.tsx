@@ -75,18 +75,6 @@ export default function SignIn() {
     }
   }, [isAuthenticated, navigate, user]);
 
-  useEffect(() => {
-    if (!isRegister) {
-      const handleBackButton = () => {
-        navigate("/", { replace: true });
-      };
-
-      window.addEventListener('popstate', handleBackButton);
-      return () => {
-        window.removeEventListener('popstate', handleBackButton);
-      };
-    }
-  }, [isRegister, navigate]);
 
   const handleVisiblePassword = () => {
     setVisiblePassword(!visiblePassword);

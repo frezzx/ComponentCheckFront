@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Container, Section, Title, Subtitle, CustomButton } from "./styles";
 import CardQuizz from "../Components/CardQuizz";
+import Resultado from "../Components/pdfGenerator/index";
 import httpClient from "../../services/api";
 import { useAuth } from "../../auth/AuthContext";
 import { Header } from "../Components/Header";
@@ -38,6 +39,11 @@ export default function Candidate() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([]);
   const [userAnswers, setUserAnswers] = useState<number[]>([]);
+  const [resultado, setResultado] = useState<{
+    nome: string;
+    pontuacao: number;
+    status: string;
+  } | null>(null);
 
   useEffect(() => {
     if (user?.role !== "candidate") {
@@ -70,9 +76,15 @@ export default function Candidate() {
 
     const questionsForLevel: Question[] = questions[0]?.questions || [];
 
+    if (questionsForLevel.length < 4) {
+      toast.error("Este nível ainda não possui 4 perguntas disponíveis.");
+      return;
+    }
+
     setUserAnswers(Array(questionsForLevel.length).fill(-1));
     setFilteredQuestions(questionsForLevel);
     setStartQuizz(true);
+    setResultado(null); // Limpa resultado anterior
     setCurrentIndex(0);
   };
 
@@ -107,14 +119,23 @@ export default function Candidate() {
       return acc + (userAnswers[index] === correctAnswerIndex ? 1 : 0);
     }, 0);
 
+    const status = score >= 3 ? "Aprovado" : "Reprovado";
+
+    setResultado({
+      nome: user?.name || "Candidato",
+      pontuacao: score,
+      status,
+    });
+
     toast.success(
-      `Quiz finalizado! Você acertou ${score} de ${filteredQuestions.length} perguntas`,
+      `Quiz finalizado! Você acertou ${score} de ${filteredQuestions.length} perguntas (${status})`,
       {
         autoClose: false,
         closeButton: true,
       }
     );
 
+    // Reseta o quiz
     setStartQuizz(false);
     setCurrentIndex(0);
     setFilteredQuestions([]);
@@ -168,6 +189,16 @@ export default function Candidate() {
             </select>
 
             <CustomButton onClick={handleStartQuiz}>Iniciar Quiz</CustomButton>
+
+            {resultado && (
+              <div style={{ marginTop: 40 }}>
+                <Resultado
+                  nome={resultado.nome}
+                  pontuacao={resultado.pontuacao}
+                  status={resultado.status}
+                />
+              </div>
+            )}
           </div>
         ) : filteredQuestions.length > 0 ? (
           <div
@@ -179,36 +210,34 @@ export default function Candidate() {
               padding: 10,
             }}
           >
-            {filteredQuestions.length > 0 && (
-              <div
-                key={filteredQuestions[currentIndex].id}
-                style={{ width: "60%" }}
-              >
-                {filteredQuestions[currentIndex].answers.length === 0 ? (
-                  <div>Não há itens</div>
-                ) : (
-                  <CardQuizz
-                    question={filteredQuestions[currentIndex].question}
-                    options={filteredQuestions[currentIndex].answers.map(
-                      (a) => a.text
-                    )}
-                    correctAnswerIndex={filteredQuestions[
-                      currentIndex
-                    ].answers.findIndex((a) => a.isCorrect)}
-                    imageUrl={filteredQuestions[currentIndex].urlImg}
-                    currentIndex={currentIndex}
-                    totalQuestions={filteredQuestions.length}
-                    onNext={handleNext}
-                    onPrevious={handlePrevious}
-                    onFinish={handleFinish}
-                    onAnswerSelected={handleAnswerSelected}
-                    userId={Number(user?.id)}
-                    quizId={quizzes[0].id}
-                    category={""}
-                  />
-                )}
-              </div>
-            )}
+            <div
+              key={filteredQuestions[currentIndex].id}
+              style={{ width: "60%" }}
+            >
+              {filteredQuestions[currentIndex].answers.length === 0 ? (
+                <div>Não há itens</div>
+              ) : (
+                <CardQuizz
+                  question={filteredQuestions[currentIndex].question}
+                  options={filteredQuestions[currentIndex].answers.map(
+                    (a) => a.text
+                  )}
+                  correctAnswerIndex={filteredQuestions[
+                    currentIndex
+                  ].answers.findIndex((a) => a.isCorrect)}
+                  imageUrl={filteredQuestions[currentIndex].urlImg}
+                  currentIndex={currentIndex}
+                  totalQuestions={filteredQuestions.length}
+                  onNext={handleNext}
+                  onPrevious={handlePrevious}
+                  onFinish={handleFinish}
+                  onAnswerSelected={handleAnswerSelected}
+                  userId={Number(user?.id)}
+                  quizId={quizzes[0]?.id || 0}
+                  category={""}
+                />
+              )}
+            </div>
           </div>
         ) : (
           <p>Quiz sem perguntas ou carregando...</p>
