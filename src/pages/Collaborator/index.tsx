@@ -54,6 +54,8 @@ export default function Collaborator() {
   const fetchQuizzes = async () => {
     try {
       const response = await httpClient.get<Quiz[]>("quiz/list");
+      const responseIAQuiz = await httpClient.get("openaiquiz/questions")
+      console.log('quiz da IA', responseIAQuiz)
       setQuizzes(response.data);
     } catch (error) {
       console.error("Erro ao buscar quizzes:", error);
@@ -77,7 +79,7 @@ export default function Collaborator() {
     setFilteredQuestions(questionsForLevel);
     setStartQuizz(true);
     setCurrentIndex(0);
-    setShowResultado(false); // reset resultado ao iniciar quiz
+    setShowResultado(false); 
   };
 
   const handleNext = () => {

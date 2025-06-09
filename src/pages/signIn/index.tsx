@@ -75,35 +75,60 @@ export default function SignIn() {
     }
   }, [isAuthenticated, navigate, user]);
 
-
   const handleVisiblePassword = () => {
     setVisiblePassword(!visiblePassword);
   };
 
-const handleSubmit = async () => {
-  setError(null);
-  setLoading(true);
+  const handleSubmit = async () => {
+    setError(null);
+    setLoading(true);
 
-  try {
-    if (isRegister) {
-      // ... validações
-      await register(name, email, password, userRole);
-      toast.success("Registro bem-sucedido! Faça login.");
-      setIsRegister(false);
-      // Adicione isso para resetar o formulário após o registro
-      setName("");
-      setEmail("");
-      setPassword("");
-      setConfirmPassword("");
-    } else {
-      await login(email, password);
+    try {
+      if (isRegister) {
+        if (!name || !email || !password || !confirmPassword) {
+          setError("Preencha todos os campos.");
+          setLoading(false);
+          return;
+        }
+
+        if (password !== confirmPassword) {
+          setError("As senhas não coincidem.");
+          setLoading(false);
+          return;
+        }
+
+        await register(name, email, password, userRole);
+
+        // Limpar formulário
+        setName("");
+        setEmail("");
+        setPassword("");
+        setConfirmPassword("");
+
+        // Mudar para login
+        setIsRegister(false);
+
+        // Aguardar a re-renderização para evitar erro de DOM
+        setTimeout(() => {
+          toast.success("Registro bem-sucedido! Faça login.");
+        }, 100);
+      } else {
+        if (!email || !password) {
+          setError("Preencha todos os campos.");
+          setLoading(false);
+          return;
+        }
+
+        await login(email, password);
+      }
+    } catch (err: any) {
+      console.error("Erro no login/registro:", err);
+      toast.error("Erro ao processar sua solicitação.");
+      setError(err.message || "Erro inesperado.");
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    // ... tratamento de erros
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleToggleRegister = () => {
     setIsRegister(!isRegister);
